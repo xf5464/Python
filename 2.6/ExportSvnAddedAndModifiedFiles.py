@@ -8,17 +8,17 @@ import os
 client = pysvn.Client()
 
 #svn根目录
-#svnPath = "E:/tool/测试/"
-svnPath = "E:/suitang/fresh/resource/"
+svnPath = "E:/测试/"
+#svnPath = "E:/suitang/fresh/resource/"
 
 #输出目录
-outputPath = "f:/svnExport3/"
+outputPath = "f:/svnExport5/"
 
 #起始svn版本号
-startRevisionId = 129787
+startRevisionId = 129827
 
 #结束svn版本号
-endRevisionId = 129812
+endRevisionId = 129829
 
 svnAddedType = "added"
 
@@ -49,13 +49,17 @@ for object in summary:
 
         realDesPath = unicode(desFolderUrl, "utf8")
 
+        realFileDesPath = unicode(outputPath + fileUrl, "utf8")
+
         if not os.path.exists(realDesPath):
             os.makedirs(realDesPath)
 
-        shutil.copy(realStartPath, realDesPath)
+        if os.path.exists(realStartPath):#判断下文件是否存在，不存在会报错
+            # shutil.copyfile(realStartPath, realFileDesPath)
+            shutil.copy(realStartPath, realDesPath)
 
         count = count + 1
 
-        print("svntype::" + str(svnType) + " fileUrl:" + str(svnPath + fileUrl))
+        print(str(svnType) + " " + unicode(str(svnPath + fileUrl), "utf8"))
 
 print("complete " + str(count))
