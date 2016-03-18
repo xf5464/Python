@@ -3,22 +3,27 @@ import pysvn
 import shutil
 import os
 
+import sys
+reload(sys)
+sys.setdefaultencoding( "utf-8" )
+
+
 #http://pysvn.tigris.org/project_downloads.html 去这里根据svn版本和python版本下载对应的pySvn库
 
 client = pysvn.Client()
 
 #svn根目录
-svnPath = "E:/测试/"
-#svnPath = "E:/suitang/fresh/resource/"
+#svnPath = "E:/测试/"
+svnPath = "F:/隋唐越南版本fresh客户端/"
 
 #输出目录
-outputPath = "f:/svnExport5/"
+outputPath = "f:/svnExport7/"
 
 #起始svn版本号
-startRevisionId = 129827
+startRevisionId = 129022
 
 #结束svn版本号
-endRevisionId = 129829
+endRevisionId = 130200
 
 svnAddedType = "added"
 
@@ -33,7 +38,18 @@ count = 0
 
 for object in summary:
     svnType = str(object.summarize_kind)
-    fileUrl = str(object.path)
+    try:
+        fileUrl = str(object.path)
+    except:
+
+        #ret = object.path.decode("utf8")
+        print("error:" + object.path + " " + object.path[33:36])
+
+        continue
+        #fileUrl = unicode(object.path, "utf8")
+
+    if not fileUrl.__contains__("."): #folder not file:
+         continue
 
     if svnType == svnAddedType or svnType == svnModifiedType:
         desFolderUrl = ""
@@ -56,7 +72,10 @@ for object in summary:
 
         if os.path.exists(realStartPath):#判断下文件是否存在，不存在会报错
             # shutil.copyfile(realStartPath, realFileDesPath)
-            shutil.copy(realStartPath, realDesPath)
+            try:
+                shutil.copy(realStartPath, realDesPath)
+            except:
+                print("error1:" + realStartPath + " " + realDesPath)
 
         count = count + 1
 

@@ -3,6 +3,10 @@ import subprocess
 import os
 import shutil
 
+import sys
+reload(sys)
+sys.setdefaultencoding( "utf-8" )
+
 gitRepositoryPath = "E:/j6/fresh/resource/"
 
 outputPath = "f:/git输出/"
@@ -34,6 +38,9 @@ def copyFilesToDestination(log):
             os.makedirs(realDesPath)
 
         print(unicode(str(gitRepositoryPath + fileUrl), "utf8"))
+
+        if not fileUrl.__contains__("."): #folder not file:
+            continue
 
         if fileUrl == "":
             print("file url is empty")
