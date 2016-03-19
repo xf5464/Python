@@ -1,96 +1,83 @@
-#coding=utf-8
+# coding=utf-8
 import os
 import codecs
 import chardet
-import math
-
-from chardet.universaldetector import UniversalDetector
 
 targetEncode = "utf-8"
 
-files = os.listdir(os.getcwd())
+needRecursive = 1  # 子文件里面的也要处理的话设置成1，只处理当前目录设置成0
 
-def getDecode(file, maxLine):
-     newFile = open(file, "rb")#要有"rb"，如果没有这个的话，默认使用gbk读文件。
-     # buf = file.read()
+def processtxtfile(targetfile):
+    print("start " + targetfile)
 
-     buf = newFile.readlines()
+    newfile = open(targetfile, "rb")  # 要有"rb"，如果没有这个的话，默认使用gbk读文件。
+    # buf = file.read()
 
-     if maxLine == -1:
-         maxLine = len(buf)
+    buf = newfile.readlines()
 
-     max = min(len(buf), maxLine)
+    maxline = min(len(buf), 20)
 
-     temp = ""
+    temp = ""
 
-     for i in range(0,max):
-         temp = temp + buf[i]
+    for i in range(0, maxline):
+        temp += buf[i]
 
-     newFile.close()
-     result = chardet.detect(temp)
-     return result
+    newfile.close()
+    result = chardet.detect(temp)
 
+    print("file:" + targetfile + " result:" + str(result["encoding"]) + " " + str(result["confidence"]))
+    readencode = result["encoding"]
 
-print("total:" + str(len(files)))
-for file in files:
-    #print(file)
-    if file.find(".txt") != -1:
+    if readencode == "GB2312":  # 加大容错率
+        readencode = "gbk"
+    encodefile = codecs.open(targetfile, "r", readencode)
 
+    encodestring = ""
 
-        print("start " + file)
-
-        newFile = open(file, "rb")#要有"rb"，如果没有这个的话，默认使用gbk读文件。
-       # buf = file.read()
-
-        buf = newFile.readlines()
-
-        max = min(len(buf), 20)
-
-        temp = ""
-
-        for i in range(0,max):
-           temp = temp + buf[i]
-
-        newFile.close()
-        result = chardet.detect(temp)
-
-        print("file:" + file + " result:" +str(result["encoding"]) + " " + str(result["confidence"]))
-        readEncode = result["encoding"]
-
-        if readEncode == "GB2312":
-            readEncode = "gbk"
-        encodeFile = codecs.open(file, "r", readEncode)
-
+    try:
+        encodestring = encodefile.read()
+    except UnicodeDecodeError, e:
+        gbkfile = codecs.open(targetfile, "r", "gbk")
         try:
-            encodeString = encodeFile.read()
-        except UnicodeDecodeError, e:
-           # newDecode = getDecode(file, -1)
-            errorString = str(e)
-            errorStringPeriod = errorString[e.start:e.end]
+            encodestring = gbkfile.read()
+            gbkfile.close()
+        except UnicodeDecodeError, e2:
+            print("error:" + str(e2))
+            # continue
 
-            gbkFile = codecs.open(file, "r", "gbk")
-            try:
-                encodeString = gbkFile.read()
-                gbkFile.close()
-            except UnicodeDecodeError, e2:
-                print("error:" + str(e2))
-            #continue
+    utf8string = encodestring
 
-        utf8String = encodeString;
+    if not isinstance(utf8string, unicode):
+        utf8string = unicode(encodestring, targetEncode)
 
-        if not isinstance(utf8String, unicode):
+    encodefile.close()
 
-            utf8String = unicode(encodeString, "utf-8")
+    tt = utf8string.encode(targetEncode)
 
-        encodeFile.close();
+    # continue
+    newwritefile = open(targetfile, "w")
+    newwritefile.write(tt)
+    newwritefile.close()
 
-        tt = utf8String.encode("utf-8")
+    print("end " + targetfile)
+    # file = open(file,"r",encoding=result["encoding"])
 
-        #continue
-        kk = chardet.detect(tt)
-        newWriteFile = open(file, "w")
-        newWriteFile.write(tt)
-        newWriteFile.close();
 
-        print("end " + file)
-        #file = open(file,"r",encoding=result["encoding"])
+def processfolder(folder):
+
+    _real_path = folder
+
+    if not isinstance(folder, unicode):
+        _real_path = unicode(folder,'gbk')
+
+    files = os.listdir(_real_path)
+
+    for subfile in files:
+        if subfile.find(".txt") != -1:
+            processtxtfile(_real_path + "\\" + subfile)
+        elif subfile.find(".") == -1 and needRecursive == 1:
+            processfolder(_real_path + "\\" + subfile)
+    return
+
+
+processfolder(os.getcwd())
