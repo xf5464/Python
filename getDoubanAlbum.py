@@ -99,10 +99,13 @@ def downLoadOneAlbumPhotos(albumId, username, albumName):
     
     count = 0
     
-    parentFolder = localPath + username + "/" + str(albumName).rstrip()
+    parentFolder = localPath + username + "/" + _translate_file_Name(str(albumName).rstrip())
 
     if not os.path.exists(parentFolder):
         os.makedirs(parentFolder)
+    else:
+        print("相册" + albumName + "已存在")
+        return
         
     html = getCurrentAlbumHtml(startUrl)
 
@@ -151,9 +154,9 @@ def getPageUrlsOfOneAlnum(firstPageUrl, sourceHtml):
 def getCurrentPhotoPageUrls(sourceHtml):
     pattern = re.compile(r"https://www.douban.com/photos/photo/[0-9]+")
 
-    decodeHtml = sourceHtml.decode("utf-8")
+    decode_html = sourceHtml.decode("utf-8")
     
-    ret = pattern.findall(decodeHtml);
+    ret = pattern.findall(decode_html)
 
     return ret
 
@@ -184,15 +187,19 @@ def downloadFile(url, folder):
 
     startIndex = url.rfind("/")
 
-    endIndex = url.rfind(".");
+    endIndex = url.rfind(".")
 
-    imageName = url[startIndex:]
+    imageName = _translate_file_Name(url[startIndex:])
 
     data = urllib.request.urlopen(url).read()  
-    f = open(folder + imageName,"wb")  
+    f = open(folder + "/" + imageName,"wb")
     f.write(data)  
     f.close()
-    
+
+
+def _translate_file_Name(_file_name):
+    r1 = re.compile("\\\|\*|\<|\>|\||\?|\/")
+    return re.sub(r1, "a",  _file_name)
 
 downloadUserPhotos(username)
 
