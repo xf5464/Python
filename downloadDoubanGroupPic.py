@@ -1,10 +1,10 @@
 #coding=utf-8
-import urllib.request
-import re
+import codecs
 import os
-import threading
+import random
+import re
 import time
-
+import urllib.request
 
 localPath = "./group/"
 
@@ -23,6 +23,10 @@ userProxyIndex = 0
 proxies = {}
 
 headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0'}
+
+fileList = {}
+
+txt_name = "topics.txt"
 
 def downloadGroupTopicPictures(groupName):
 
@@ -53,7 +57,11 @@ def downloadGroupTopicPictures(groupName):
 
         fetchCount = fetchCount + 1
 
-        time.sleep(interval_time)
+        sleep_time = random.randint(interval_time*0.5, interval_time)
+
+        print("sleep" + sleep_time + "s")
+
+        time.sleep(sleep_time)
 
     print("download finished")
 
@@ -61,26 +69,47 @@ def downloadOnePageTopPics(groupName, startIndex, parentFolder):
 
     url = "https://www.douban.com/group/" + groupName + "/discussion?start=" + str(startIndex)
 
+    #url = "http://localhost/aaa.html"
+
     print(_get_time_string() + " check url")
 
-    topicUrlSet = getTopicList(url)
+    ret = getTopicList(url)
 
-    print("has elements:" + str(len(topicUrlSet)))
+    if len(ret) == 0:
+        return
 
-    for topicUrl in topicUrlSet:
+    topsArray = ret[0]
+    titles = ret[1]
+    authors = ret[2]
 
-        _topic_info = _get_topic_info(topicUrl)
+    #topicUrlSet = getTopicList(url)
 
-        date = _topic_info[0]
+    length = len(topsArray)
 
-        author = _topic_info[1]
+    print("has elements:" + str(length))
 
-        title = _topic_info[2] \
+    for i in range(0, length):
+
+        topicUrl = topsArray[i]
+
+        author = authors[i]
+
+        title = titles[i]
 
         if author == "":
             continue
 
         _sub_folder_name =  title + "-by-" + author
+
+        if  fileList.get(_sub_folder_name) == True:
+            continue
+
+        _topic_info = _get_topic_info(topicUrl)
+
+        date = _topic_info[0]
+
+        if date == "":
+            continue
 
         _full_folder_name = parentFolder + "/" + date + "/" + _translate_file_Name(_sub_folder_name)
 
@@ -91,7 +120,9 @@ def downloadOnePageTopPics(groupName, startIndex, parentFolder):
 
         print(_get_time_string() + ":" + " load" + title + " by" + author)
 
-        downloadOneTopicPictures(topicUrl, _full_folder_name)
+        time.sleep(random.randint(1, 3))
+
+        downloadOneTopicPictures(topicUrl, _full_folder_name, _sub_folder_name)
 
     print("finish page " + str(startIndex + 1))
 
@@ -99,17 +130,49 @@ def downloadOnePageTopPics(groupName, startIndex, parentFolder):
 
 def getTopicList(url):
 
+    #把帖子名称和用户名也取出来，这样就可以减少很多次数去取具体页面
     decodeHtml = getWebPageHtml(url)
-    
+
+    tablePattern = re.compile(r"<table class=\"olt\">.*</table>", re.S)
+
+    tableStringArray = tablePattern.findall(decodeHtml)
+
+    if len(tableStringArray) == 0:
+        return []
+
+    targetString = tableStringArray[0]
+
     topicPattern = re.compile(r"https://www.douban.com/group/topic/[0-9]+/")
 
     topsArray = topicPattern.findall(decodeHtml)
 
-    topicSet = set(topsArray)
+    """
+    topicSet = []
 
-    return topicSet
+    for id in topsArray:
+        if id not in topicSet:
+            topicSet.append(id)
+    """
 
-def downloadOneTopicPictures(url, parentFolder):
+    titlePattern = re.compile(r'(?<= title=\").*?(?=\")')
+
+    titles = titlePattern.findall(targetString)
+
+    #sciprit有一个
+    del titles[0]
+
+    authorPattern = re.compile(r'(?<=class=\"\">).*(?=</a></td>)')
+
+    authors = authorPattern.findall(targetString)
+
+    #topicSet = list(set(topsArray))
+
+    #topicSet.sort(topsArray.index)
+
+    ret = [topsArray, titles, authors]
+    return ret
+
+def downloadOneTopicPictures(url, parentFolder, _sub_folder_name):
 
     urls = getPicUrlInOneTopic(url)
 
@@ -117,6 +180,8 @@ def downloadOneTopicPictures(url, parentFolder):
 
     for url in urls:
         downloadFile(url, parentFolder)
+
+    _write_to_record(_sub_folder_name)
 
 def _get_topic_info(url):
 
@@ -255,5 +320,28 @@ def _get_time_string():
     return time.strftime('%Y-%m-%d %H:%M:%S')
 #changeProxy()
 
+def _readFileList():
+    if not os.path.exists(txt_name):
+        return
+
+    f = codecs.open(txt_name, 'r', 'utf-8')
+    content = f.readlines()
+    f.close()
+
+    for line in content:
+        fileList[line.encode('utf-8')] = True
+
+def _write_to_record(name):
+    fileList[name] = True
+
+    f = codecs.open(txt_name, 'a', 'utf-8')
+   #txt = unicode("campeón\n", "utf-8")
+    f.write(name + "\n")
+    f.close()
+
+
+_readFileList()
+
+#_write_to_record("九个")
 downloadGroupTopicPictures(groupName)
 
