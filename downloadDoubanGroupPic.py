@@ -59,7 +59,7 @@ def downloadGroupTopicPictures(groupName):
 
         sleep_time = random.randint(interval_time*0.5, interval_time)
 
-        print("sleep" + sleep_time + "s")
+        print("sleep" + str(sleep_time) + "s")
 
         time.sleep(sleep_time)
 
