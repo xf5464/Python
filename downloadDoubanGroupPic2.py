@@ -23,7 +23,8 @@ proxyList = ["39.83.13.122:8080", "113.68.87.45:8090", "171.39.234.222:80", "182
 
 userProxyIndex = 0
 
-proxies = {}
+proxies = []
+
 req_header = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0',
  'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
  'Accept-Charset':'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
@@ -45,6 +46,10 @@ fileList = {}
 
 txt_name = "downLoadedTopics.txt"
 
+ip_address_text_name = "ip_address.txt"
+
+read_pages = 0
+
 def downloadGroupTopicPictures(groupName):
 
     #changeProxy()
@@ -64,7 +69,7 @@ def downloadGroupTopicPictures(groupName):
     if not os.path.exists(parentFolder):
         os.makedirs(parentFolder)
 
-    for i in range(100, maxPage):
+    for i in range(1, maxPage):
 
         validNum = downloadOnePageTopPics(groupName, i * eachPageSize, parentFolder)
 
@@ -75,6 +80,16 @@ def downloadGroupTopicPictures(groupName):
         print("sleep" + str(sleep_time) + "s")
 
         time.sleep(sleep_time)
+
+        global read_pages
+
+        read_pages = read_pages + 1
+
+        if read_pages == 5:
+            read_pages = 0
+            _changeProxy()
+
+
 
 
 
@@ -309,8 +324,12 @@ def getWebPageHtml(url):
     #urllib.request.install_opener(opener)
 
     try:
-        html = _read_data(url)
-    except urllib.error.URLError as e:
+        html = _read_data(url).decode("utf-8")
+
+        if html == "":
+            _changeProxy()
+
+    except:
         return ""
 
     #ecodeHtml = html.decode("utf-8")
@@ -349,58 +368,48 @@ def _write_to_record(name):
 
 def _changeProxy():
 
-    # return
-    print("aaaa")
-
     global opener
     #proxy_support = urllib.request.ProxyHandler({'http':'119.254.84.90:80'})
-    proxy_support = urllib.request.ProxyHandler({'http': '127.0.0.1:80'})
+    if (len(proxies) == 0):
+        _read_valid_ips()
+
+    if len(proxies) == 0:
+        print("no valid ips")
+        return
+
+    ip = proxies.pop()
+
+    proxy_support = urllib.request.ProxyHandler({'http': ip})
     opener = urllib.request.build_opener(proxy_support)
     urllib.request.install_opener(opener)
 
+    print("change proxy:" + ip)
     return
-
-   # proxies = {'http':proxyList[userProxyIndex]}
-
-    print(getTimeStr() + " change proxy site;" + proxyList[userProxyIndex])
-    #global opener
-
-    #opener = urllib.FancyURLopener(proxies)
-
-    proxy_handler = urllib.request.ProxyHandler({'http': proxyList[userProxyIndex]})
-
-    opener = urllib.request.build_opener(proxy_handler)
-    urllib.request.install_opener(opener)
-
-    userProxyIndex = userProxyIndex + 1
-    if userProxyIndex >= len(proxyList):
-        userProxyIndex = 0
-
-    print("userProxyIndex" + str(userProxyIndex))
 
 def _read_data(url):
     try:
-
-        response = opener.open(url);
-        response_data = response.read().decode("utf8")
-       # print(proxyIp, "正确：" + response_data);
-        #html = urllib.request.urlopen(url).read()
-        return response_data
-    except urllib.error.URLError as e:
+        html = urllib.request.urlopen(url).read()
+        return html
+    except:
         return ""
 
-hostname = socket.gethostname()
+def _read_valid_ips():
+    if not os.path.exists(ip_address_text_name):
+        return
 
-ipList = socket.gethostbyname_ex(hostname)
+    f = codecs.open(ip_address_text_name, 'r', 'utf-8')
+    content = f.readlines()
+    f.close()
+
+    for line in content:
+        k = str(line).split(" ")
+        ip = k[0];
+        port = k[1]
+        proxies.append(ip + ":" + str(int(port)))
 
 _changeProxy()
 
-ipList2 = socket.gethostbyname_ex(hostname)
-#_readFileList()
-#t = _read_data("www.baidu.com")
-print("bvbbb")
-#t2 =  _read_data("http://www.douban.com")
-t3 = 1
-#_write_to_record("九个")
+_readFileList()
+
 downloadGroupTopicPictures(groupName)
 
