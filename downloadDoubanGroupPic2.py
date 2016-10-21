@@ -5,9 +5,9 @@ import random
 import re
 import time
 import urllib.request
-import socket
+from http import cookiejar
 
-localPath = "./group2/"
+localPath = "./group4/"
 
 groupName = "haixiuzu"
 
@@ -15,7 +15,7 @@ maxPage = 1000
 
 eachPageSize = 25
 
-interval_time = 30 #20s刷一次首页
+interval_time = 10 #20s刷一次首页
 
 opener = 1
 
@@ -33,7 +33,13 @@ req_header = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:49.0) Gecko/2
  'Referer':None #注意如果依然不能抓取的话，这里可以设置抓取网站的host
  }
 
-req_header2 = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0','Referer':None}
+req_header2 =  [('User-Agent','Mozilla/5.0 (Windows NT 6.1; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'),('Referer',"http://www.xicidaili.com/nn/1"),
+                ('Accept','text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'),('Accept-Language','zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3'),
+                ('Connection','keep-alive'),('Accept-Encoding','gzip, deflate, br')]
+
+cookie_filename = 'cookie.txt'
+cookie = cookiejar.MozillaCookieJar(cookie_filename)
+handler = urllib.request.HTTPCookieProcessor(cookie)
 """
 opener = urllib.request.build_opener()
 opener.addheaders = [req_header2]
@@ -49,6 +55,8 @@ txt_name = "downLoadedTopics.txt"
 ip_address_text_name = "ip_address.txt"
 
 read_pages = 0
+
+has_save_cookie = False
 
 def downloadGroupTopicPictures(groupName):
 
@@ -70,28 +78,40 @@ def downloadGroupTopicPictures(groupName):
         os.makedirs(parentFolder)
 
     for i in range(1, maxPage):
+        """
+        max_thread = 4
+
+        start_index = i
+        end_index = start_index + max_thread + 1
+
+        for j in range(start_index, end_index):
+            p = multiprocessing.Process(target=downloadOnePageTopPics, args=(groupName, j * eachPageSize, parentFolder))
+            p.start()
+
+        i = end_index
+        """
 
         validNum = downloadOnePageTopPics(groupName, i * eachPageSize, parentFolder)
 
+        global has_save_cookie
+
+        if has_save_cookie == False:
+            has_save_cookie = True
+            cookie.save(ignore_discard=True, ignore_expires=True)  # 保存cookie到cookie.txt中
+            print(cookie)
+            for item in cookie:
+                print('Name = ' + item.name)
+                print('Value = ' + item.value)
+
         sleep_time = random.randint(interval_time*0.5, interval_time)
 
-        print("finish page " + str(i + 1))
+        print("finish page " + str(i))
 
         print("sleep" + str(sleep_time) + "s")
 
         time.sleep(sleep_time)
 
-        global read_pages
-
-        read_pages = read_pages + 1
-
-        if read_pages == 5:
-            read_pages = 0
-            _changeProxy()
-
-
-
-
+        _changeProxy()
 
     print("download finished")
 
@@ -99,6 +119,7 @@ def downloadOnePageTopPics(groupName, startIndex, parentFolder):
 
     url = "https://www.douban.com/group/" + groupName + "/discussion?start=" + str(startIndex)
 
+    print(_get_time_string() + " downloadOnePageTopPics " +  groupName + " start_index:" + str(startIndex) + " parentFolder:" + parentFolder)
     #url = "http://localhost/aaa.html"
 
     validNum = 0
@@ -326,10 +347,9 @@ def getWebPageHtml(url):
     try:
         html = _read_data(url).decode("utf-8")
 
-        if html == "":
-            _changeProxy()
-
     except:
+        _changeProxy()
+
         return ""
 
     #ecodeHtml = html.decode("utf-8")
@@ -380,7 +400,8 @@ def _changeProxy():
     ip = proxies.pop()
 
     proxy_support = urllib.request.ProxyHandler({'http': ip})
-    opener = urllib.request.build_opener(proxy_support)
+    opener = urllib.request.build_opener(proxy_support, handler)
+    opener.addheaders = req_header2
     urllib.request.install_opener(opener)
 
     print("change proxy:" + ip)
@@ -407,9 +428,8 @@ def _read_valid_ips():
         port = k[1]
         proxies.append(ip + ":" + str(int(port)))
 
-_changeProxy()
-
-_readFileList()
-
-downloadGroupTopicPictures(groupName)
+if __name__ == "__main__":
+    _changeProxy()
+    _readFileList()
+    downloadGroupTopicPictures(groupName)
 
