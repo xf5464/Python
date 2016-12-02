@@ -1,0 +1,57 @@
+﻿<project name="test" default="test" basedir=".">
+	
+	  <!--this file only work in windows, if need to work in linux, replace the <exec executable="cmd.exe"> with svnant -->
+	  <property file="build.properties"/>
+	  
+	  <!--if this line is removed, will throw error "Could not create task or type:mxmlc"-->
+	  <taskdef resource="flexTasks.tasks" classpath="${FLEX_HOME}/ant/lib/flexTasks.jar"/>
+
+    <!--<typedef resource="org/tigris/subversion/svnant/svnantlib.xml" classpathref="svnant.classpath"/>-->
+	  
+    <target name="compile_main">
+
+	  	   <mxmlc file="${flash_repository}/src/FlashWithJenkins.as" output="${output.dir}/FlashWithJenkins.swf" maxmemory="1024m" fork="true">
+	  	   	   
+	  	   	   <!--add bundle file-->
+	  	   	    <!--<source-path>${source.dir}/locale/${locale}</source-path>-->
+
+				<!--<define name="DEF::CLIENTLOGIN" value="true"/> -->
+
+	  	   	    <static-link-runtime-shared-libraries>true</static-link-runtime-shared-libraries>
+
+		        <!--<compiler.library-path dir="${source.dir}/lib" append="true">
+					<include name="*.swc" />
+				</compiler.library-path>
+				
+	  	   	   <source-path path-element="${source.dir}/src"/>-->  
+	  	   	
+	  	   	   <load-config filename="${FLEX_HOME}/frameworks/flex-config.xml"/>
+	  	   	   	
+	  	   		 <!--<compiler.library-path dir="" append="true"></compiler.library-path>-->
+	  	   	   
+	  	   	   <compiler.debug>true</compiler.debug>
+	  	  
+	  	   </mxmlc>
+	  	   
+	  </target>
+    
+	  <target name="update_svn_and_copy_files">
+	    <exec executable="${python_bin}/python">
+			<arg value="${main_python_file}"/>
+			<arg value="${flash_repository}"/>
+			<arg value="${svn_path}"/>
+			<arg value="${update_python_version_xml_path}"/>
+			<arg value="${update_python_version_dat_path}"/>
+			<arg value="${verion_txt_path}"/>
+			<arg value="${resource_repository}"/>
+			<arg value="${resource_output_destination}"/>
+		</exec>
+	  </target>
+
+	  <target name="test">
+	     <exec executable="${python_bin}/python">
+			<arg value="${test_python_file}"/>
+		</exec>
+	  </target>
+
+</project>
