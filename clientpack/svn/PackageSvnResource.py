@@ -11,7 +11,7 @@ from xml.etree.ElementTree import SubElement
 
 from git import Repo
 
-DEBUG_MODE = 2
+DEBUG_MODE = 1
 
 '''if DEBUG_MODE == 1:
     git_path = "C:/Program Files/Git/bin/git.exe"
@@ -31,7 +31,7 @@ if DEBUG_MODE == 1:
 
     _version_txt = "e:/version_digit.txt"
 
-    _resource_repository = "E:/test_resource/source2/flashWithJenkinsResource/"
+    _resource_repository = "F:/test_svn_1/test_trunck/destinationwc/"
 
     _resource_destination = "E:/package_output"
 
